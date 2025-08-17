@@ -73,7 +73,8 @@ class LoginLogger:
             page.keyboard.press("Enter")
             page.keyboard.press("Enter")
             logger.info("Logging in")
-        page.wait_for_url(self.homepage, wait_until="domcontentloaded", timeout=120_000)
+        page.wait_for_url("https://mega.nz/fm/**", timeout=120_000)
+        page.wait_for_selector("div.fm-main", timeout=120_000)
         logger.info("Logged in successfully")
         self.tab = page
 
