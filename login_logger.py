@@ -74,7 +74,15 @@ class LoginLogger:
             page.keyboard.press("Enter")
             logger.info("Logging in")
         page.wait_for_url("https://mega.nz/fm/**", timeout=120_000)
-        page.wait_for_selector("div.fm-main", timeout=120_000)
+        try:
+            # Wait for either success or redirect
+            page.wait_for_selector("div.fm-main", timeout=120_000)
+            print("✅ Successfully logged into MEGA dashboard.")
+        except:
+            current_url = page.url
+            print(f"❌ Unexpected redirect to: {current_url}")
+            page.screenshot(path="login-failure.png")
+            raise
         logger.info("Logged in successfully")
         self.tab = page
 
