@@ -1,4 +1,6 @@
 import sys
+from urllib import response
+
 sys.dont_write_bytecode = True
 
 import os
@@ -7,6 +9,7 @@ from logging_formatter import CsvFormatter
 from time import sleep
 import json
 import re
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 
 class LoginLogger:
@@ -21,12 +24,14 @@ class LoginLogger:
         self.pwd = pwd
         self.homepage = homepage
         self.filename = filename
+
         self.dashboard_url = None
         self.tab = None
 
         self.formatter = CsvFormatter(self.filename)
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
+
         self.DuoHandler = logging.StreamHandler()
         self.DuoHandler.setFormatter(self.formatter)
         self.logger.addHandler(self.DuoHandler)
@@ -36,7 +41,6 @@ class LoginLogger:
         logger.info("Launching browser")
         browser = playwright.firefox.launch(args=["--start-maximized"], headless=True)
         page = browser.new_page(no_viewport=True)
-
         page.route(
             "**/*",
             lambda route: route.abort()
@@ -46,49 +50,40 @@ class LoginLogger:
             )
             else route.continue_(),
         )
-
         page.goto(self.login_url)
         logger.info(f"Retrieving login page '{self.login_url}'")
         page.fill(self.usr_sel, self.usr)
         page.fill(self.pwd_sel, self.pwd)
-
         if button is not None:
             page.wait_for_selector(button)
             if page.locator(button).is_enabled():
                 try:
                     page.click(button)
                     page.keyboard.press("Enter")
-                    logger.info("Logging in with button")
+                    page.keyboard.press("Enter")
+                    logger.info("Logging in")
                 except:
                     logger.error("Login button error")
             else:
                 page.keyboard.press("Enter")
-                logger.info("Logging in without button (disabled)")
+                page.keyboard.press("Enter")
+                logger.info("Logging in")
         else:
             page.keyboard.press("Enter")
-            logger.info("Logging in without button (no selector provided)")
+            page.keyboard.press("Enter")
+            logger.info("Logging in")
 
-        page.wait_for_timeout(4000)
+        logger.info("Waiting for redirection or login result...")
         current_url = page.url
         if "blog.mega.io" in current_url:
-            logger.error(f"❌ Unexpected redirect to: {current_url}")
-            try:
-                page.screenshot(path="login-failure.png")
-                logger.info("📸 Screenshot saved to 'login-failure.png'")
-            except:
-                logger.warning("Screenshot capture failed.")
-            raise Exception("Login failed or blocked (redirected to blog)")
+            logger.error(f"Redirected to unexpected URL: {current_url}")
+            raise Exception(f"❌ Unexpected redirect to blog: {current_url}")
 
         try:
             page.wait_for_selector("div.fm-main", timeout=120_000, state="visible")
-            logger.info("✅ Successfully logged into MEGA dashboard.")
-        except:
-            logger.error("❌ Login possibly failed. 'div.fm-main' did not become visible.")
-            try:
-                page.screenshot(path="login-timeout.png")
-                logger.info("📸 Screenshot saved to 'login-timeout.png'")
-            except:
-                logger.warning("Screenshot capture failed.")
+            logger.info("✅ Logged in successfully.")
+        except PlaywrightTimeoutError:
+            logger.error(f"Timeout while waiting for successful login at URL: {page.url}")
             raise Exception("Login failed or timed out.")
 
         self.tab = page
