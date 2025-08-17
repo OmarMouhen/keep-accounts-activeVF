@@ -80,10 +80,10 @@ class LoginLogger:
             raise Exception("Login failed or blocked (redirected to blog)")
 
         try:
-            page.wait_for_selector("div.fm-main", timeout=120_000)
+            page.wait_for_selector("div.fm-main", timeout=120_000, state="visible")
             logger.info("✅ Successfully logged into MEGA dashboard.")
         except:
-            logger.error("❌ Login possibly failed. 'div.fm-main' did not load.")
+            logger.error("❌ Login possibly failed. 'div.fm-main' did not become visible.")
             try:
                 page.screenshot(path="login-timeout.png")
                 logger.info("📸 Screenshot saved to 'login-timeout.png'")
