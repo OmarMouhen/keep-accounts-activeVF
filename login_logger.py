@@ -89,6 +89,6 @@ class LoginLogger:
         self.tab = page
     def redirect(self, href_sel):
         self.logger.info(f"➡️ Redirecting to element with selector: {href_sel}")
-        self.tab.wait_for_selector(href_sel, timeout=10_000)
+        self.tab.wait_for_selector(href_sel, timeout=10_000, state="visible")
         self.tab.click(href_sel)
         self.logger.info(f"✅ Redirected successfully.")
